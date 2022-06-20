@@ -4,7 +4,10 @@ on ship efficiency
 """
 import numpy as np
 
-MAX_AoA = np.deg2rad(20)  # for computing foil structural mass
+
+def main():
+    max_angle_of_attack = np.deg2rad(20)  # for computing foil structural mass
+    max_speed_mps = 10
 
 
 # TODO: Set up model (Hull with 2 main foils)

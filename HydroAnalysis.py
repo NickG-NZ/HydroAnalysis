@@ -63,9 +63,9 @@ class HydroAnalysis:
         Return the net forces acting on the boat in the waterplane 'Datum' frame
         """
         fm_body = self.force_moment_body(speed)
-        fm_waterplane = self._hull.frame.vector_to_frame(*fm_body.force(), Datum())
+        forces_waterplane = self._hull.frame.vector_to_frame(*fm_body.force(), Datum())
 
-        return fm_waterplane
+        return ForceMoment(*forces_waterplane, fm_body.moment())
 
     def _gravitational_forces(self):
         """
