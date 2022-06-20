@@ -34,7 +34,7 @@ class Frame:
 
         return rot_y_D + self._rot_y
 
-    def vector_in_frame(self, x, z, frame):
+    def vector_to_frame(self, x, z, frame):
         """
         Takes a vector with components (x, z) expressed in this frame's coords and transforms it into the target
         frame's coords

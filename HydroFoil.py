@@ -28,7 +28,7 @@ class HydroFoil:
     def __init__(self, span, chord, frame, oswald_efficiency=0.7, drag_model=DragModel.SCHOENHERR, thickness_ratio=0.1):
         self.span = span
         self.chord = chord
-        self._frame = frame
+        self.frame = frame
         self._oswald_efficiency = oswald_efficiency  # default is for rectangular wing
         self._drag_model = drag_model
         self._thickness_ratio = thickness_ratio  # thickness to chord ratio (too high => cavitation at higher speeds)
@@ -39,19 +39,19 @@ class HydroFoil:
     def position_on_hull(self, hull_frame):
         """
         """
-        return hull_frame.vector_from_frame(*(self._frame.origin_in_datum() - hull_frame.origin_in_datum()), Datum())
+        return hull_frame.vector_from_frame(*(self.frame.origin_in_datum() - hull_frame.origin_in_datum()), Datum())
 
     def trim_on_hull(self, hull_frame):
         """
         """
-        return self._frame.rotation_in_datum() - hull_frame.rotation_in_datum()
+        return self.frame.rotation_in_datum() - hull_frame.rotation_in_datum()
 
     def set_location(self, pos_x, pos_z, rot_y):
         """
         Change location relative to existing reference frame
         """
-        ref_frame = self._frame.ref_frame()
-        self._frame = Frame(ref_frame, pos_x, pos_z, rot_y)
+        ref_frame = self.frame.ref_frame()
+        self.frame = Frame(ref_frame, pos_x, pos_z, rot_y)
 
     def force_moment(self, speed):
         """
@@ -59,13 +59,13 @@ class HydroFoil:
         :param speed: [m/s] assumed to lie in datum frame x-axis
         :returns ForceMoment(Fx, Fz, My)
         """
-        angle_of_attack = -self._frame.rotation_in_datum()  # +ve nose down trim creates -ve lift
-        aero_frame = Frame(self._frame, 0, 0, angle_of_attack - np.pi)  # x=lift, z = drag
+        angle_of_attack = -self.frame.rotation_in_datum()  # +ve nose down trim creates -ve lift
+        aero_frame = Frame(self.frame, 0, 0, angle_of_attack - np.pi)  # x=lift, z = drag
 
         lift = self._lift(angle_of_attack, speed)
         drag = self._drag(angle_of_attack, speed)
 
-        fx, fz = aero_frame.vector_in_frame(lift, drag, self._frame)
+        fx, fz = aero_frame.vector_to_frame(lift, drag, self.frame)
         # fx = lift * np.sin(angle_of_attack) - drag * np.cos(angle_of_attack)
         # fz = lift * np.cos(angle_of_attack) + drag * np.sin(angle_of_attack)
         my = self._moment(angle_of_attack, speed)
@@ -125,7 +125,7 @@ class HydroFoil:
         :param fos: Factor of Safety
         """
         # temporarily set the trim angle to a maximum
-        pos_x, pos_z, rot_y = self._frame.location()
+        pos_x, pos_z, rot_y = self.frame.location()
         self.set_location(pos_x, pos_z, -max_angle_of_attack)
 
         # solve for spar thickness

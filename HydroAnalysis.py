@@ -8,6 +8,8 @@ import numpy as np
 from collections import namedtuple
 
 import constants
+from ForceMoment import ForceMoment
+from Frame import Datum
 
 
 MassComponent = namedtuple("MassComponent", ["mass", "frame"])
@@ -27,40 +29,54 @@ class HydroAnalysis:
         """
         self._foils.append(foil)
         self._mass_components.append(foil_mass)
-2
-    def add_mass_component(self, mass, coords):
+
+    def add_mass_component(self, mass):
         """
         :param mass:
-        :param coords: 2D coordinates of the mass component (in hull frame)
         """
         self._mass_components.append(mass)
 
-    def force_moments_body(self, speed, trim, sink):
+    def set_state(self, sink, trim):
         """
-        ret
+        Set the boat state
+        Only have to set hull, since foils should reference its frame
+        :param sink: z position in Datum frame (+ve up)
+        :param trim: y rotation in Datum frame (+ve bow down)
         """
-        pass
+        self._hull.set_state(sink, trim)
 
-    def force_moments_waterplane(self):
+    def force_moment_body(self, speed):
         """
-        :return:
+        Compute the net forces in the body frame acting on the boat
         """
-        pass
+        fm_body = self._gravitational_forces()
+        fm_body.add(self._hull.force_moment(speed))
+
+        for foil in self._foils:
+            fm_foil = foil.force_moment(speed)
+            fm_body.add(self._hull.frame.vector_from_frame(*fm_foil.force(), foil.frame))
+
+        return fm_body
+
+    def force_moment_waterplane(self, speed):
+        """
+        Return the net forces acting on the boat in the waterplane 'Datum' frame
+        """
+        fm_body = self.force_moment_body(speed)
+        fm_waterplane = self._hull.frame.vector_to_frame(*fm_body.force(), Datum())
+
+        return fm_waterplane
 
     def _gravitational_forces(self):
         """
-        Compute net gravitational force
+        Compute net gravitational force in hull frame
         """
         net_mass = np.sum([component.mass for component in self._mass_components])
+        weight = net_mass * constants.GRAVITY
+        fx, fz = self._hull.frame.vector_from_frame(0, -weight, Datum())
 
-        # compute moment
-        for mass_comp in self._mass_components:
-            pos_
-        com_x = np.sum([component.mass * component.frame.
+        # TODO: compute moment
 
-
-
-
-
+        return ForceMoment(fx, fz, 0)
 
 

@@ -19,14 +19,19 @@ class Hull:
         self.beam = beam
         self.height = height
         self.bow_fraction = bow_fraction  # fraction of total length which is the tapered bow
-        self._frame = Frame(Datum, 0, 0, 0)  # initialize at origin
+        self.frame = Frame(Datum(), 0, 0, 0)  # initialize at origin
 
     @classmethod
     def from_iges(cls, filepath, frame):
         raise NotImplementedError("Not implemented")
 
-    def set_state(self, frame):
-        self._frame = frame
+    def set_state(self, sink, trim):
+        """
+        Specify state relative to Datum frame
+        :param sink: z position in Datum frame (+ve up)
+        :param trim: y rotation in Datum frame (+ve bow down)
+        """
+        self.frame = Frame(Datum(), 0, sink, trim)
 
     def mass_reference_point(self):
         """
@@ -35,11 +40,11 @@ class Hull:
         return self.length / 2, self.height / 3
 
     def draft(self):
-        return -1 * self._frame.origin_in_datum()[1]
+        return -1 * self.frame.origin_in_datum()[1]
 
     def force_moment(self, speed):
         """
-        Computes the forces and moments acting on the hull
+        Computes the forces and moments acting on the hull (in hull coords)
         Ignores any trim angle (Assumes buoyancy is aligned with hull z-axis and drag aligned with x-axis
         """
         drag = self._drag(speed)
@@ -51,10 +56,13 @@ class Hull:
         Combined wave drag and skin friction
         Note, even the simplest analytical wave drag computations are extremely complex
         Hence a scaling factor is applied to the skin friction based on Figure 2.11, Marine Hydrodynamics
+
+        # TODO: Replace the wave drag factor with the 'Holtrop-Mennen' relationship here:
+        https://thenavalarch.com/how-to-use-empirical-formulas-to-estimate-the-resistance-of-a-ship/
         """
         cd = self._skin_friction_coeff(speed)
 
-        # compute scaling factor based on speed (Froude number)
+        # compute scaling factor based on speed (~Froude number)
         # At speeds below 5kts (2.5m/s), the drag is almost all skin friction. At 15 kts (7.5m/s) at the reynolds number
         # of interest ~10^8.4, the drag has increased above the skin friction estimate by a factor of 2.5
         cd_wave_scaling = min(3.0, (speed - 2.5) * 2.5 / (7.5 - 2.5))

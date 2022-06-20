@@ -14,3 +14,8 @@ class ForceMoment:
 
     def moment(self):
         return self._my
+
+    def add(self, force_moment):
+        self._fx += force_moment.force()[0]
+        self._fz += force_moment.force()[1]
+        self._my += force_moment.moment()
