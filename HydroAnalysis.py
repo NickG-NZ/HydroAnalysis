@@ -12,7 +12,7 @@ from ForceMoment import ForceMoment
 from Frame import Datum
 
 
-MassComponent = namedtuple("MassComponent", ["mass", "frame"])
+MassComponent = namedtuple("MassComponent", ["mass", "pos_x", "pos_z"])
 
 
 class HydroAnalysis:
@@ -28,6 +28,11 @@ class HydroAnalysis:
         :param foil_mass: MassComponent for the selected foil
         """
         self._foils.append(foil)
+
+        # convert the location of the mass from foil co-ords to hull coords
+        foil_pos_hull = self._foil_location_on_hull(foil)
+        mass_pos_hull = self._hull.frame.vector_from_frame(foil_mass.pos_x. foil_mass.pos_y, foil.frame) + foil_pos_hull
+        foil_mass = MassComponent(foil_mass.mass, *mass_pos_hull)
         self._mass_components.append(foil_mass)
 
     def add_mass_component(self, mass):
@@ -79,4 +84,13 @@ class HydroAnalysis:
 
         return ForceMoment(fx, fz, 0)
 
+    def _foil_location_on_hull(self, foil):
+        """
+        """
+        return self._hull.frame.vector_from_frame(*(foil.frame.origin_in_datum() - self._hull.frame.origin_in_datum()), Datum())
+
+    def _foil_trim_on_hull(self, foil):
+        """
+        """
+        return foil.frame.rotation_in_datum() - self._hull.frame.rotation_in_datum()
 

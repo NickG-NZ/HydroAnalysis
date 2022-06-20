@@ -36,16 +36,6 @@ class HydroFoil:
         self._area_ref = self.span * self.chord
         self._aspect_ratio = (self.span ** 2) / self._area_ref  # s/c or s^2/A
 
-    def position_on_hull(self, hull_frame):
-        """
-        """
-        return hull_frame.vector_from_frame(*(self.frame.origin_in_datum() - hull_frame.origin_in_datum()), Datum())
-
-    def trim_on_hull(self, hull_frame):
-        """
-        """
-        return self.frame.rotation_in_datum() - hull_frame.rotation_in_datum()
-
     def set_location(self, pos_x, pos_z, rot_y):
         """
         Change location relative to existing reference frame
@@ -58,6 +48,8 @@ class HydroFoil:
         Computes the forces in the foil's own frame
         :param speed: [m/s] assumed to lie in datum frame x-axis
         :returns ForceMoment(Fx, Fz, My)
+
+        # TODO: Add submersion checks (set lift to zero if foil breaches)
         """
         angle_of_attack = -self.frame.rotation_in_datum()  # +ve nose down trim creates -ve lift
         aero_frame = Frame(self.frame, 0, 0, angle_of_attack - np.pi)  # x=lift, z = drag
@@ -71,6 +63,34 @@ class HydroFoil:
         my = self._moment(angle_of_attack, speed)
 
         return ForceMoment(fx, fz, my)
+
+    def structural_mass(self, max_angle_of_attack, max_speed, material, fos=1.3, scaling_factor=1.6):
+        """
+        Model the structural mass using a simple cantilever calc with an estimated wing thickness
+        proportional to the chord defining the main spar size.
+        The spar is modelled as a square hollow section.
+        A scaling factor is applied for the ribs and skin mass
+
+        :param fos: Factor of Safety
+        """
+        # temporarily set the trim angle to a maximum
+        pos_x, pos_z, rot_y = self.frame.location()
+        self.set_location(pos_x, pos_z, -max_angle_of_attack)
+
+        # solve for spar thickness
+        max_force_moment = self.force_moment(max_speed)
+        bending_moment = np.linalg.norm(max_force_moment.force()) * self.span / 2
+        spar_height = self._thickness_ratio * self.chord
+
+        Ixx_req = (bending_moment * spar_height * 0.5 * fos) / material.yield_strength  # sigma = My/I
+        thickness_req = spar_height + ((Ixx_req * 12) - (spar_height ** 4)) ** (1 / 4)
+
+        structural_mass = thickness_req * spar_height * 4 * self.span * material.density * scaling_factor
+
+        # revert the foil back to its original trim angle
+        self.set_location(pos_x, pos_z, rot_y)
+
+        return structural_mass
 
     def _lift(self, angle_of_attack, speed):
         cl = self._lift_coefficient(angle_of_attack)
@@ -115,30 +135,3 @@ class HydroFoil:
 
         return moment
 
-    def _structural_mass(self, max_angle_of_attack, max_speed, material, fos=1.3, scaling_factor=1.6):
-        """
-        Model the structural mass using a simple cantilever calc with an estimated wing thickness
-        proportional to the chord defining the main spar size.
-        The spar is modelled as a square hollow section.
-        A scaling factor is applied for the ribs and skin mass
-
-        :param fos: Factor of Safety
-        """
-        # temporarily set the trim angle to a maximum
-        pos_x, pos_z, rot_y = self.frame.location()
-        self.set_location(pos_x, pos_z, -max_angle_of_attack)
-
-        # solve for spar thickness
-        max_force_moment = self.force_moment(max_speed)
-        bending_moment = np.linalg.norm(max_force_moment.force()) * self.span / 2
-        spar_height = self._thickness_ratio * self.chord
-
-        Ixx_req = (bending_moment * spar_height * 0.5 * fos) / material.yield_strength  # sigma = My/I
-        thickness_req = spar_height - ((spar_height ** 4) - Ixx_req * 12) ** (1 / 4)
-
-        structural_mass = thickness_req * spar_height * 4 * self.span * material.density * scaling_factor
-
-        # revert the foil back to its original trim angle
-        self.set_location(pos_x, pos_z, rot_y)
-
-        return structural_mass

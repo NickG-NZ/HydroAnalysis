@@ -15,6 +15,7 @@ class VPPSolverError(Exception):
 def run_vpp(hydro_model, speed):
     """
     :param hydro_model: An instance of HydroAnalysis
+    :param speed:
     """
     x0 = -1  # [m] initial sink solution guess
     bounds = optimize.Bounds([-4], [-0.1])  # sink limits
