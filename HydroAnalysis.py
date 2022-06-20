@@ -4,6 +4,7 @@ Computes the net forces and moments given the trim, speed and sink of the vessel
 
 The model is currently 1D (sink only)
 """
+import numpy as np
 from collections import namedtuple
 
 import constants
@@ -26,7 +27,7 @@ class HydroAnalysis:
         """
         self._foils.append(foil)
         self._mass_components.append(foil_mass)
-
+2
     def add_mass_component(self, mass, coords):
         """
         :param mass:
@@ -47,7 +48,18 @@ class HydroAnalysis:
         pass
 
     def _gravitational_forces(self):
-        pass
+        """
+        Compute net gravitational force
+        """
+        net_mass = np.sum([component.mass for component in self._mass_components])
+
+        # compute moment
+        for mass_comp in self._mass_components:
+            pos_
+        com_x = np.sum([component.mass * component.frame.
+
+
+
 
 
 

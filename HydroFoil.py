@@ -6,14 +6,13 @@ Origin is at quarter chord, x-axis lies along chord, z-axis is upward normal
 * Assumes laminar flow
 
 @ref: http://www.aerodynamics4students.com/subsonic-aerofoil-and-wing-theory/flat-plate-lift.php
-@ref: https://en.wikipedia.org/wiki/Oswald_efficiency_number#:~:text=The%20Oswald%20efficiency%2C%20similar%20to,and%20an%20elliptical%20lift%20distribution.
 @ref: https://www.c23434.net/resources/MKMM1313/Chapter-04/0-C4-01.pdf
 @ref: Marine Hydrodynamics 2018 - Newman
 """
 import numpy as np
 from enum import Enum
 
-from Frame import Frame
+from Frame import Frame, Datum
 from ForceMoment import ForceMoment
 from utils import reynolds_number, schoenherr_drag_coeff
 import constants
@@ -26,25 +25,33 @@ class DragModel(Enum):
 
 class HydroFoil:
 
-    def __init__(self, span, chord, frame, oswald_efficiency=0.7, drag_model=DragModel.SCHOENHERR):
-        self._span = span
-        self._chord = chord
+    def __init__(self, span, chord, frame, oswald_efficiency=0.7, drag_model=DragModel.SCHOENHERR, thickness_ratio=0.1):
+        self.span = span
+        self.chord = chord
         self._frame = frame
         self._oswald_efficiency = oswald_efficiency  # default is for rectangular wing
         self._drag_model = drag_model
+        self._thickness_ratio = thickness_ratio  # thickness to chord ratio (too high => cavitation at higher speeds)
 
-        self._area_ref = self._span * self._chord
-        self._aspect_ratio = (self._span ** 2) / self._area_ref  # s/c or s^2/A
+        self._area_ref = self.span * self.chord
+        self._aspect_ratio = (self.span ** 2) / self._area_ref  # s/c or s^2/A
 
     def position_on_hull(self, hull_frame):
         """
         """
-        return self._frame.origin_in_datum() - hull_frame.origin_in_datum()
+        return hull_frame.vector_from_frame(*(self._frame.origin_in_datum() - hull_frame.origin_in_datum()), Datum())
 
     def trim_on_hull(self, hull_frame):
         """
         """
         return self._frame.rotation_in_datum() - hull_frame.rotation_in_datum()
+
+    def set_location(self, pos_x, pos_z, rot_y):
+        """
+        Change location relative to existing reference frame
+        """
+        ref_frame = self._frame.ref_frame()
+        self._frame = Frame(ref_frame, pos_x, pos_z, rot_y)
 
     def force_moment(self, speed):
         """
@@ -53,7 +60,7 @@ class HydroFoil:
         :returns ForceMoment(Fx, Fz, My)
         """
         angle_of_attack = -self._frame.rotation_in_datum()  # +ve nose down trim creates -ve lift
-        aero_frame = Frame(self._frame, 0, 0, angle_of_attack + np.pi)  # x=lift, z = drag
+        aero_frame = Frame(self._frame, 0, 0, angle_of_attack - np.pi)  # x=lift, z = drag
 
         lift = self._lift(angle_of_attack, speed)
         drag = self._drag(angle_of_attack, speed)
@@ -82,7 +89,7 @@ class HydroFoil:
             * skin friction drag
             * pressure drag (assume zero, flow attached)
         """
-        Re = reynolds_number(speed, constants.WATER_KINEMATIC_VISCOSITY, self._chord)
+        Re = reynolds_number(speed, constants.WATER_KINEMATIC_VISCOSITY, self.chord)
 
         if self._drag_model == DragModel.BLASIUS:
             cd_skin_friction = 1.328 / np.sqrt(Re)
@@ -104,6 +111,34 @@ class HydroFoil:
         Flat plate theory quarter chord moment coefficient
         """
         cm = -np.pi * angle_of_attack / 2
-        moment = 0.5 * cm * self._chord * constants.WATER_DENSITY * self._area_ref * (speed ** 2)
+        moment = 0.5 * cm * self.chord * constants.WATER_DENSITY * self._area_ref * (speed ** 2)
 
         return moment
+
+    def _structural_mass(self, max_angle_of_attack, max_speed, material, fos=1.3, scaling_factor=1.6):
+        """
+        Model the structural mass using a simple cantilever calc with an estimated wing thickness
+        proportional to the chord defining the main spar size.
+        The spar is modelled as a square hollow section.
+        A scaling factor is applied for the ribs and skin mass
+
+        :param fos: Factor of Safety
+        """
+        # temporarily set the trim angle to a maximum
+        pos_x, pos_z, rot_y = self._frame.location()
+        self.set_location(pos_x, pos_z, -max_angle_of_attack)
+
+        # solve for spar thickness
+        max_force_moment = self.force_moment(max_speed)
+        bending_moment = np.linalg.norm(max_force_moment.force()) * self.span / 2
+        spar_height = self._thickness_ratio * self.chord
+
+        Ixx_req = (bending_moment * spar_height * 0.5 * fos) / material.yield_strength  # sigma = My/I
+        thickness_req = spar_height - ((spar_height ** 4) - Ixx_req * 12) ** (1 / 4)
+
+        structural_mass = thickness_req * spar_height * 4 * self.span * material.density * scaling_factor
+
+        # revert the foil back to its original trim angle
+        self.set_location(pos_x, pos_z, rot_y)
+
+        return structural_mass
