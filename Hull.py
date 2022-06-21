@@ -40,7 +40,7 @@ class Hull:
         return self.length / 2, self.height / 3
 
     def draft(self):
-        return -1 * self.frame.origin_in_datum()[1]
+        return max(0, -1 * self.frame.origin_in_datum()[1])
 
     def force_moment(self, speed):
         """

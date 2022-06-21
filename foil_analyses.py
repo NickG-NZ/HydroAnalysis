@@ -37,8 +37,14 @@ def main():
     # set up analysis
     hydro_analysis = HydroAnalysis(hull)
     hydro_analysis.add_mass_component(MassComponent(hull_mass, *hull.mass_reference_point()))
-    hydro_analysis.add_foil(foil_port, MassComponent(foil_mass, -chord / 4, 0))
-    hydro_analysis.add_foil(foil_stbd, MassComponent(foil_mass, -chord / 4, 0))
+
+    # Run sweep with no foils
+
+
+    # Add foils and re-run sweep
+    # hydro_analysis.add_foil(foil_port, MassComponent(foil_mass, -chord / 4, 0))
+    # hydro_analysis.add_foil(foil_stbd, MassComponent(foil_mass, -chord / 4, 0))
+
 
     # solve VPP
     speed = 10

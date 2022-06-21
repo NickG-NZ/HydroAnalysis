@@ -30,8 +30,8 @@ class HydroAnalysis:
         self._foils.append(foil)
 
         # convert the location of the mass from foil co-ords to hull coords
-        foil_pos_hull = self._foil_location_on_hull(foil)
-        mass_pos_hull = self._hull.frame.vector_from_frame(foil_mass.pos_x. foil_mass.pos_y, foil.frame) + foil_pos_hull
+        foil_pos_hull = np.array(self._foil_location_on_hull(foil))
+        mass_pos_hull = np.array(self._hull.frame.vector_from_frame(foil_mass.pos_x, foil_mass.pos_z, foil.frame)) + foil_pos_hull
         foil_mass = MassComponent(foil_mass.mass, *mass_pos_hull)
         self._mass_components.append(foil_mass)
 
@@ -52,14 +52,15 @@ class HydroAnalysis:
 
     def force_moment_body(self, speed):
         """
-        Compute the net forces in the body frame acting on the boat
+        Compute the net forces in the hull body frame acting on the boat
         """
         fm_body = self._gravitational_forces()
         fm_body.add(self._hull.force_moment(speed))
 
         for foil in self._foils:
             fm_foil = foil.force_moment(speed)
-            fm_body.add(self._hull.frame.vector_from_frame(*fm_foil.force(), foil.frame))
+            fm_foil_B = ForceMoment(*self._hull.frame.vector_from_frame(*fm_foil.force(), foil.frame), fm_foil.moment())
+            fm_body.add(fm_foil_B)
 
         return fm_body
 
@@ -86,8 +87,10 @@ class HydroAnalysis:
 
     def _foil_location_on_hull(self, foil):
         """
+        Expressed in hull co-ords
         """
-        return self._hull.frame.vector_from_frame(*(foil.frame.origin_in_datum() - self._hull.frame.origin_in_datum()), Datum())
+        pos_relative_H = np.array(foil.frame.origin_in_datum()) - np.array(self._hull.frame.origin_in_datum())
+        return self._hull.frame.vector_from_frame(*pos_relative_H, Datum())
 
     def _foil_trim_on_hull(self, foil):
         """
