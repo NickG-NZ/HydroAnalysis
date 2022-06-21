@@ -22,10 +22,15 @@ class Frame:
         return self._pos_x, self._pos_z, self._rot_y
 
     def origin_in_datum(self):
-        pos_x_D, pos_z_D = self._ref_frame.origin_in_datum()
-        rot_y_D = self.rotation_in_datum()
-        pos_x_D += self._pos_x * np.cos(rot_y_D) + self._pos_z * np.sin(rot_y_D)
-        pos_z_D += -self._pos_x * np.sin(rot_y_D) + self._pos_z * np.cos(rot_y_D)
+        # reference frame's position relative to datum
+        pos_x_ref_D, pos_z_ref_D = self._ref_frame.origin_in_datum()
+
+        # this frame's position relative to reference, expressed in Datum coords
+        dpos_x_D, dpos_z_D = self._ref_frame.vector_to_frame(self._pos_x, self._pos_z, Datum())
+
+        # combine
+        pos_x_D = pos_x_ref_D + dpos_x_D
+        pos_z_D = pos_z_ref_D + dpos_z_D
 
         return pos_x_D, pos_z_D
 
@@ -63,7 +68,7 @@ class Datum(Frame):
         super().__init__(None, 0, 0, 0)
 
     def origin_in_datum(self):  # override
-        return 0, 0, 0
+        return 0, 0
 
     def rotation_in_datum(self):  # override
         return 0

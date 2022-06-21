@@ -21,7 +21,7 @@ class Steel(Material):
 
     def __init__(self):
         self._density = 7800  # [kg/m^3]
-        self._yield_strength = 400  # [MPa]
+        self._yield_strength = 400e6  # [Pa]
 
     @property
     def density(self):

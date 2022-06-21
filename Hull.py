@@ -19,7 +19,7 @@ class Hull:
         self.beam = beam
         self.height = height
         self.bow_fraction = bow_fraction  # fraction of total length which is the tapered bow
-        self.frame = Frame(Datum(), 0, 0, 0)  # initialize at origin
+        self.frame = Frame(Datum(), 0, -height / 3, 0)  # initialize with some submersion
 
     @classmethod
     def from_iges(cls, filepath, frame):
