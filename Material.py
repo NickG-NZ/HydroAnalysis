@@ -1,32 +1,15 @@
 """
 Material Properties
 """
-from abc import ABC, abstractmethod
+from dataclasses import dataclass
 
 
-class Material(ABC):
-
-    @property
-    @abstractmethod
-    def density(self):
-        raise NotImplementedError
-
-    @property
-    @abstractmethod
-    def yield_strength(self):
-        raise NotImplementedError
+@dataclass
+class Material:
+    density: float
+    yield_strength: float
 
 
-class Steel(Material):
-
-    def __init__(self):
-        self._density = 7800  # [kg/m^3]
-        self._yield_strength = 400e6  # [Pa]
-
-    @property
-    def density(self):
-        return self._density
-
-    @property
-    def yield_strength(self):
-        return self._yield_strength
+# Material Definitions
+Steel = Material(7800, 400e6)
+SteelAISI1340 = Material(7870, 565e6)  # https://www.matweb.com/search/datasheet.aspx?MatGUID=6e1830ea7a334716bc6209316464b487

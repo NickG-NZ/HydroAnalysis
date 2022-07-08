@@ -29,3 +29,20 @@ def schoenherr_drag_coeff(Re, initial_guess):
 
     return cd_skin_friction
 
+
+def propulsive_power(speed, drag, prop_efficiency=1.0):
+    """
+    Compute the propulsive power required
+    Assumes speed and drag are both defined parallel to the waterplane
+
+    Typical prop efficiencies are in the range 0.6-0.8
+    """
+    return speed * drag * prop_efficiency
+
+
+def kts_to_mps(speed_kts):
+    return speed_kts / 1.94384
+
+
+def mps_to_kts(speed_mps):
+    return speed_mps * 1.94384
