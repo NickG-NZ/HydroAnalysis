@@ -3,15 +3,15 @@ Example of setting up a hull with some hydrofoils and computing the equilibirium
 using the VPP
 """
 import sys, os
-import numpy as np
 import matplotlib.pyplot as plt
 
 sys.path.append(os.path.join(os.path.abspath(__file__), os.pardir))
 
-from HydroAnalysis import HydroAnalysis, MassComponent
+from HydroAnalysis import HydroAnalysis
 from Hull import Hull
 from HydroFoil import HydroFoil
 from Frame import Frame
+from ForceMoment import MassComponent
 from Material import Steel
 from VPP import *
 from utils import propulsive_power
@@ -56,8 +56,8 @@ def main():
     print(f"Equilibrium Power [kW]: {power_req / 1000:.2f}")
 
     # Add foils and re-run sweep
-    hydro_analysis.add_foil(foil_port, MassComponent(foil_mass, -chord / 4, 0))
-    hydro_analysis.add_foil(foil_stbd, MassComponent(foil_mass, -chord / 4, 0))
+    hydro_analysis.add_foil(foil_port, foil_mass)
+    hydro_analysis.add_foil(foil_stbd, foil_mass)
     # hull_draft_sweep(hydro_analysis, speed, title="Hull + Foils - Draft Sweep")
 
     # Run VPP
@@ -100,7 +100,7 @@ def vpp_equilib(hydro_analysis, speed, initial_sink):
     The drag (and hence power) can then be obtained at this point
     """
     try:
-        equilib_sink = run_vpp(hydro_analysis, speed, [initial_sink])
+        equilib_sink = run_sink_vpp(hydro_analysis, speed, initial_sink)
     except VPPSolverError as e:
         print(e)
         equilib_sink = np.nan

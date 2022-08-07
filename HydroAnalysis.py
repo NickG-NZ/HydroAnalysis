@@ -5,14 +5,10 @@ Computes the net forces and moments given the trim, speed and sink of the vessel
 The model is currently 1D (sink only)
 """
 import numpy as np
-from collections import namedtuple
 
 import constants
-from ForceMoment import ForceMoment
+from ForceMoment import ForceMoment, MassComponent
 from Frame import Datum
-
-
-MassComponent = namedtuple("MassComponent", ["mass", "pos_x", "pos_z"])
 
 
 class HydroAnalysis:
@@ -21,6 +17,12 @@ class HydroAnalysis:
         self._hull = hull
         self._foils = []
         self._mass_components = []
+
+    def get_hull(self):
+        return self._hull
+
+    def total_mass(self):
+        return np.sum([component.mass for component in self._mass_components])
 
     def add_foil(self, foil, foil_mass):
         """

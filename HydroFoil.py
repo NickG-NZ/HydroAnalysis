@@ -13,7 +13,7 @@ import numpy as np
 from enum import Enum
 
 from Frame import Frame
-from ForceMoment import ForceMoment
+from ForceMoment import ForceMoment, MassComponent
 from utils import reynolds_number, schoenherr_drag_coeff
 import constants
 
@@ -29,21 +29,20 @@ class HydroFoil:
         pass
 
     def __init__(self, span, chord, frame, oswald_efficiency=0.7, drag_model=DragModel.SCHOENHERR, thickness_ratio=0.1,
-                end_plated=True):
+                end_plate_factor=1):
         self._span = span
         self._chord = chord
         self.frame = frame
         self._oswald_efficiency = oswald_efficiency  # default is for rectangular wing
         self._drag_model = drag_model
         self._thickness_ratio = thickness_ratio  # thickness to chord ratio (too high => cavitation at higher speeds)
-        self._end_plated = end_plated
-
-        self._compute_derived_geo()
+        self.end_plate_factor = max(2, min(1.0, end_plate_factor))
 
         # Channels to log
         self._lift_N = 0
         self._drag_N = 0
         self._my_Nm = 0
+        self._LD = 0
         self._angle_of_attack_rad = 0
         self._cl = 0
         self._cd_induced = 0
@@ -51,7 +50,13 @@ class HydroFoil:
         self._fx_N = 0
         self._fz_N = 0
         self._bending_moment_Nm = 0
+        self._area_ref = 0
+        self._aspect_ratio = 0
+        self._aspect_ratio_effective = 0
         self._thickness_req_m = 0
+        self._load_density_Pa = 0
+
+        self._compute_derived_geo()
 
     def set_location(self, pos_x, pos_z, rot_y):
         """
@@ -77,6 +82,15 @@ class HydroFoil:
         self._thickness_ratio = thickness_ratio
         self._compute_derived_geo()
 
+    def cavitation_check(self):
+        """
+        Hydrofoils often cavitate when the load density reaches 60 kPa
+        This check throws, so any code running a hyrdofoil sim should
+        be wrapped in an exception block
+        @ref Practical Ship Hydrodynamics - Bertram 2000
+        """
+        return self._load_density_Pa < 6e4
+
     def force_moment(self, speed):
         """
         Computes the forces in the foil's own frame
@@ -96,8 +110,13 @@ class HydroFoil:
         self._lift_N *= submersion_force_scaling
         self._drag_N *= submersion_force_scaling
 
+        self._LD = self._lift_N / self._drag_N
+
         self._fx_N, self._fz_N = aero_frame.vector_to_frame(self._lift_N, self._drag_N, self.frame)
         self._compute_moment(speed)
+
+        # Cavitation loading check
+        self._foil_loading_cavitation_check()
 
         return ForceMoment(self._fx_N, self._fz_N, self._my_Nm)
 
@@ -136,7 +155,7 @@ class HydroFoil:
         # revert the foil back to its original trim angle
         self.set_location(pos_x, pos_z, rot_y)
 
-        return structural_mass
+        return MassComponent(structural_mass, -self._chord / 4, 0)
 
     def _compute_lift(self, speed):
         self._cl = self._lift_coefficient(self._angle_of_attack_rad)
@@ -187,17 +206,18 @@ class HydroFoil:
         self._area_ref = self._span * self._chord
         self._aspect_ratio = (self._span ** 2) / self._area_ref
 
-        # Account for wing mounted to side of hull
-        if self._end_plated:
-            self._aspect_ratio_effective = self._aspect_ratio * 2
-        else:
-            self._aspect_ratio_effective = self._aspect_ratio
+        # Account for winglets/endplates and /or sindle sided wing mounted to side of hull (near perfect end-plate)
+        self._aspect_ratio_effective = self._aspect_ratio * self.end_plate_factor
+
+    def _foil_loading_cavitation_check(self):
+        self._load_density_Pa = self._fz_N / self._area_ref
 
     def add_log_channels(self, logger, group_name):
         logger.add_group(group_name, self)
         logger.add_channel_to_group('_lift_N', group_name, alias='Lift_N')
         logger.add_channel_to_group('_drag_N', group_name, alias='Drag_N')
         logger.add_channel_to_group('_my_Nm', group_name, alias='My_Nm')
+        logger.add_channel_to_group('_LD', group_name, alias='LD')
         logger.add_channel_to_group('_angle_of_attack_rad', group_name, alias='AoA_rad')
         logger.add_channel_to_group('_cl', group_name, alias='CL')
         logger.add_channel_to_group('_cd_induced', group_name, alias='CDi')
@@ -207,5 +227,8 @@ class HydroFoil:
         logger.add_channel_to_group('_span', group_name, alias='Span_m')
         logger.add_channel_to_group('_chord', group_name, alias='Chord_m')
         logger.add_channel_to_group('_area_ref', group_name, alias='Area_m')
+        logger.add_channel_to_group('_aspect_ratio', group_name, alias='AspectRatio')
+        logger.add_channel_to_group('_aspect_ratio_effective', group_name, alias='AspectRatioEffective')
         logger.add_channel_to_group('_thickness_ratio', group_name, alias='ThicknessRatio')
         logger.add_channel_to_group('_bending_moment_Nm', group_name, alias='BendingMoment_Nm')
+        logger.add_channel_to_group('_load_density_Pa', group_name, alias='LoadDensity_Pa')

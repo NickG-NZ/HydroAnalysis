@@ -1,6 +1,11 @@
 """
 Convenience class for passing around wrenches (force-moment pairs)
 """
+from collections import namedtuple
+
+
+MassComponent = namedtuple("MassComponent", ["mass", "pos_x", "pos_z"])
+
 
 class ForceMoment:
 

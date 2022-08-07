@@ -46,3 +46,7 @@ def kts_to_mps(speed_kts):
 
 def mps_to_kts(speed_mps):
     return speed_mps * 1.94384
+
+
+def ft_to_m(ft):
+    return ft * 0.3048
