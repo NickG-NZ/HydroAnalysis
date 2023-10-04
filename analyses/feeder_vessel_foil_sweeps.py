@@ -10,7 +10,7 @@ Fully foiling drag and take-off power vs. Speed
 import sys, os
 import matplotlib.pyplot as plt
 
-sys.path.append(os.path.join(os.path.abspath(__file__), os.pardir))
+sys.path.append(os.path.join(os.path.dirname(os.path.abspath(__file__)), os.pardir))
 
 from HydroAnalysis import HydroAnalysis
 from Logger import Logger, LogObject

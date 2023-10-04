@@ -5,7 +5,7 @@ on ship efficiency
 import sys, os
 import matplotlib.pyplot as plt
 
-sys.path.append(os.path.join(os.path.abspath(__file__), os.pardir))
+sys.path.append(os.path.join(os.path.dirname(os.path.abspath(__file__)), os.pardir))
 
 from HydroAnalysis import HydroAnalysis, MassComponent
 from Logger import Logger, LogObject
@@ -57,7 +57,7 @@ def foil_size_sweep_supply_vessel():
     hydro_analysis = HydroAnalysis(hull)
     hydro_analysis.add_mass_component(MassComponent(vessel_mass, *hull.mass_reference_point()))
 
-    equilib_sink = run_vpp(hydro_analysis, speed, [-1])
+    equilib_sink = run_sink_vpp(hydro_analysis, speed, -1)
     equilib_forces = hydro_analysis.force_moment_waterplane(speed).force()
     power_req_base = propulsive_power(speed, -equilib_forces[0])
     print(f"Equilibrium Draft (no foils): {-equilib_sink:.3f} m")
@@ -73,8 +73,8 @@ def foil_size_sweep_supply_vessel():
 
     foil_pos_x = length / 2
     foil_pos_y = height / 4
-    foil_port = HydroFoil(1, 1, Frame(hull.frame, foil_pos_x, foil_pos_y, 0), thickness_ratio=thickness_ratio, end_plated=True)
-    foil_stbd = HydroFoil(1, 1, Frame(hull.frame, foil_pos_x, foil_pos_y, 0), thickness_ratio=thickness_ratio, end_plated=True)
+    foil_port = HydroFoil(1, 1, Frame(hull.frame, foil_pos_x, foil_pos_y, 0), thickness_ratio=thickness_ratio, end_plate_factor=1.2)
+    foil_stbd = HydroFoil(1, 1, Frame(hull.frame, foil_pos_x, foil_pos_y, 0), thickness_ratio=thickness_ratio, end_plate_factor=1.2)
 
     # Sweeps
     angles_of_attack = np.deg2rad(np.arange(3, 7, 0.2))
@@ -108,11 +108,11 @@ def foil_size_sweep_supply_vessel():
                 continue
 
             # add foils
-            hydro_analysis.add_foil(foil_port, MassComponent(foil_mass, -chord / 4, 0))
-            hydro_analysis.add_foil(foil_stbd, MassComponent(foil_mass, -chord / 4, 0))
+            hydro_analysis.add_foil(foil_port, foil_mass)
+            hydro_analysis.add_foil(foil_stbd, foil_mass)
 
             # Solve for equilibriums
-            equilib_draft = -run_vpp(hydro_analysis, speed, [-1.0])
+            equilib_draft = run_sink_vpp(hydro_analysis, speed, -1.0)
             equilib_forces = hydro_analysis.force_moment_waterplane(speed).force()
             power_required = propulsive_power(speed, -equilib_forces[0])
             ops_profile.power_required_kW = power_required / 1000
@@ -195,7 +195,7 @@ def feeder_150_teu():
     hydro_analysis = HydroAnalysis(hull)
     hydro_analysis.add_mass_component(MassComponent(vessel_mass, *hull.mass_reference_point()))
 
-    equilib_sink = run_vpp(hydro_analysis, speed, [-3])
+    equilib_sink = run_sink_vpp(hydro_analysis, speed, -3)
     equilib_forces = hydro_analysis.force_moment_waterplane(speed).force()
     power_req_base = propulsive_power(speed, -equilib_forces[0])
     print(f"Equilibrium Draft: {-equilib_sink:.3f} m")
@@ -226,7 +226,7 @@ def feeder_300_teu():
     hydro_analysis = HydroAnalysis(hull)
     hydro_analysis.add_mass_component(MassComponent(vessel_mass, *hull.mass_reference_point()))
 
-    equilib_sink = run_vpp(hydro_analysis, speed, [-3.5])
+    equilib_sink = run_sink_vpp(hydro_analysis, speed, -3.5)
     equilib_forces = hydro_analysis.force_moment_waterplane(speed).force()
     power_req_base = propulsive_power(speed, -equilib_forces[0])
     print(f"Equilibrium Draft [m]: {-equilib_sink:.3f} m")
@@ -258,7 +258,7 @@ def panamax_5000_teu():
     hydro_analysis = HydroAnalysis(hull)
     hydro_analysis.add_mass_component(MassComponent(vessel_mass, *hull.mass_reference_point()))
 
-    equilib_sink = run_vpp(hydro_analysis, speed, [-10.44])
+    equilib_sink = run_sink_vpp(hydro_analysis, speed, -10.44)
     equilib_forces = hydro_analysis.force_moment_waterplane(speed).force()
     power_req_base = propulsive_power(speed, -equilib_forces[0])
     print(f"Equilibrium Draft [m]: {-equilib_sink:.3f} m")

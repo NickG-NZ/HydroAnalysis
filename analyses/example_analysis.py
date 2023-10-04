@@ -5,7 +5,7 @@ using the VPP
 import sys, os
 import matplotlib.pyplot as plt
 
-sys.path.append(os.path.join(os.path.abspath(__file__), os.pardir))
+sys.path.append(os.path.join(os.path.dirname(os.path.abspath(__file__)), os.pardir))
 
 from HydroAnalysis import HydroAnalysis
 from Hull import Hull
@@ -49,7 +49,7 @@ def main():
     # hull_draft_sweep(hydro_analysis, speed, title="Hull Only - Draft Sweep")
 
     # Run VPP to compute equilib
-    equilib_draft = -vpp_equilib(hydro_analysis, speed, [-1.2])
+    equilib_draft = -vpp_equilib(hydro_analysis, speed, -1.2)
     equilib_forces = hydro_analysis.force_moment_waterplane(speed).force()
     power_req = propulsive_power(speed, -equilib_forces[0])
     print(f"Equilibrium Draft [m] (no foils): {equilib_draft:.3f} m")
@@ -61,7 +61,7 @@ def main():
     # hull_draft_sweep(hydro_analysis, speed, title="Hull + Foils - Draft Sweep")
 
     # Run VPP
-    equilib_draft = -vpp_equilib(hydro_analysis, speed, [-1.2])
+    equilib_draft = -vpp_equilib(hydro_analysis, speed, -1.2)
     equilib_forces = hydro_analysis.force_moment_waterplane(speed).force()
     power_req = propulsive_power(speed, -equilib_forces[0])
     print(f"Equilibrium Draft [m] (with foils): {equilib_draft:.3f} m")

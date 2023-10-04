@@ -3,7 +3,7 @@ Fit plots to vessel size specs vs num teus
 """
 import sys, os
 
-sys.path.append(os.path.join(os.path.abspath(__file__), os.pardir))
+sys.path.append(os.path.join(os.path.dirname(os.path.abspath(__file__)), os.pardir))
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -16,14 +16,15 @@ TEU_WIDTH = ft_to_m(8)
 TEU_HEIGHT = ft_to_m(8)
 TEU_MASS = 18  # [T]
 
+PLOT = True
 
 def main():
     lookup_size = 40  # TEUs
 
-    vessel_mass(lookup_size, plot=False)
-    vessel_length(lookup_size, plot=False)
-    vesel_aspect_ratio(lookup_size, plot=False)
-    vessel_draft(lookup_size, plot=False)
+    vessel_mass(lookup_size, plot=PLOT)
+    vessel_length(lookup_size, plot=PLOT)
+    vesel_aspect_ratio(lookup_size, plot=PLOT)
+    vessel_draft(lookup_size, plot=PLOT)
 
 
 def vessel_mass(lookup_size, plot=True):

@@ -8,7 +8,7 @@ Fully foiling drag and take-off power vs. Speed
 import sys, os
 import matplotlib.pyplot as plt
 
-sys.path.append(os.path.join(os.path.abspath(__file__), os.pardir))
+sys.path.append(os.path.join(os.path.dirname(os.path.abspath(__file__)), os.pardir))
 
 from HydroAnalysis import HydroAnalysis
 from Logger import Logger, LogObject
@@ -273,7 +273,7 @@ def fully_foiling(num_teus, hydro_analysis, logger, speeds):
 
     # Add foils to the model (random AoA for now)
     for foil in foils:
-        foil_mass  = chord * span * 0.01 * 4 * SteelAISI1340.density
+        foil_mass = chord * span * 0.01 * 4 * SteelAISI1340.density
         print(f"{num_teus} TEU vessel Foil Mass = {foil_mass:.1f} kg")
         hydro_analysis.add_foil(foil, MassComponent(foil_mass, -chord / 4, 0))
 

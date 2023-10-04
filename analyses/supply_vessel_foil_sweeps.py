@@ -4,7 +4,7 @@ applied to existing supply vessels
 """
 import sys, os
 
-sys.path.append(os.path.join(os.path.abspath(__file__), os.pardir))
+sys.path.append(os.path.join(os.path.dirname(os.path.abspath(__file__)), os.pardir))
 
 from HydroAnalysis import HydroAnalysis
 from Logger import Logger, LogObject
@@ -117,8 +117,8 @@ def foil_size_sweep_supply_vessel():
                 continue
 
             # add foils
-            hydro_analysis.add_foil(foil_port, MassComponent(foil_mass, -chord / 4, 0))
-            hydro_analysis.add_foil(foil_stbd, MassComponent(foil_mass, -chord / 4, 0))
+            hydro_analysis.add_foil(foil_port, foil_mass)
+            hydro_analysis.add_foil(foil_stbd, foil_mass)
 
             # Solve for equilibriums
             try:
@@ -225,7 +225,7 @@ def fully_foiling_supply_vessel():
     results_vis.compare_channels("Foil.AspectRatioEffective", "OperatingProfile.PowerPerTEU_kW")
     results_vis.compare_channels("Foil.AspectRatioEffective", "Foil.LoadDensity_Pa")
     results_vis.compare_channels("Foil.AspectRatioEffective", "Foil.AoA_rad")
-    results_vis.compare_channels("Foil.`AspectRatio`Effective", "Foil.Lift_N")
+    results_vis.compare_channels("Foil.AspectRatioEffective", "Foil.Lift_N")
     results_vis.compare_channels("Foil.AoA_rad", "Foil.CL")
 
     results_vis.run()

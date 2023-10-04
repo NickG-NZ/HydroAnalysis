@@ -3,7 +3,7 @@ Compute the relative efficiency of real Container vessels of different sizes
 """
 import sys, os
 
-sys.path.append(os.path.join(os.path.abspath(__file__), os.pardir))
+sys.path.append(os.path.join(os.path.dirname(os.path.abspath(__file__)), os.pardir))
 
 from HydroAnalysis import HydroAnalysis
 from ForceMoment import MassComponent
