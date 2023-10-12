@@ -1,2 +1,2 @@
 # HydroAnalysis
-Foiling-Ship hydrodynamics analysis
+Foiling-Ship hydrodynamics feasibility analyses
